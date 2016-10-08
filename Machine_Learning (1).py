@@ -20,21 +20,21 @@ if ('sim' not in locals() or 'sim' not in globals()):
     import pymysql
     
     
-    r = redis.StrictRedis(host='10.251.127.51', port = 57117,password='5c114ed8-4e28-4a9d-966b-e326964d9615', decode_responses = True)
+    r = redis.StrictRedis(host='xxxxxxxx', port = 57117,password='5c114ed8-4e28-4a9d-966b-e326964d9615', decode_responses = True)
 
     # Create a file handle....
      
     
-    connection = pymysql.connect(host='10.124.58.36', port=3306, user='rene', password='C0mcast!', db='Descartes') 
-    train3 = pd.read_sql('SELECT ID, Title, Description from idea', \
+    connection = pymysql.connect(host= xxxxxxxx, port=YYY, user='SSS', password='DDD', db='SERVER') 
+    train3 = pd.read_sql('SELECT ID, Title, Description from Service', \
     connection, index_col=None, coerce_float=True, params=None, parse_dates=None, columns=None, chunksize=None)
     
     
-    #Read Comcast words from a file    
-    lines = [line.lower().rstrip('\n') for line in open('comcastwords.txt')]
+    #Read Native words from a file. These are words we want to preserve    
+    lines = [line.lower().rstrip('\n') for line in open('nativewords.txt')]
 
 
-    # Modify Segment.py to exclude Comcast words when splitting words up.
+    # Modify Segment.py to exclude Native words when splitting words up.
     def letter(w):
         if w.lower() not in lines:
             i=re.sub("[^a-zA-Z]", " ", w)
@@ -49,47 +49,47 @@ if ('sim' not in locals() or 'sim' not in globals()):
             r= segment(w)
         return r
       
-    def idea_to_words1( raw_idea ):
-        letters_only = ' '.join(letter(k) for k in raw_idea.lower().split() )
+    def doc_to_words1( raw_doc ):
+        letters_only = ' '.join(letter(k) for k in raw_doc.lower().split() )
         words = letters_only.lower().split()                             
         stops = set(stopwords.words("english"))                  
         meaningful_words = ["".join(seg(w)) for w in words if not w in stops] 
         return( " ".join( meaningful_words )) # mw was  used for classifier5.pkl 
      
-    def idea_to_words( raw_idea ):
-        letters_only = ' '.join(letter(k) for k in raw_idea.lower().split() )
+    def doc_to_words( raw_doc ):
+        letters_only = ' '.join(letter(k) for k in raw_doc.lower().split() )
         words = letters_only.lower().split()                             
         stops = set(stopwords.words("english"))                  
         meaningful_words = ["".join(seg(w)) for w in words if not w in stops] 
         return meaningful_words  # mw was  used for classifier5.pkl 
 
-    num_ideas = train3["DESCRIPTION"].size  
+    num = train3["DESCRIPTION"].size  
     
 #    cursor = connection.cursor()
-#    for i in xrange( 0, num_ideas ):
-#        # Call our function for each one, and add the result to the list of clean ideas
+#    for i in xrange( 0, num_docs ):
+#        # Call our function for each one, and add the result to the list of clean docs
 #        #if( (i+1)%100 == 0 ):
-#            print " Retrieving Idea %d of %d\n" % ( i+1, num_ideas )     
-#        k=  "\""+idea_to_words1( train3["Title"][i]+train3["Description"][i] )+ "\""
+#            print " Retrieving doc %d of %d\n" % ( i+1, num_docs )     
+#        k=  "\""+doc_to_words1( train3["Title"][i]+train3["Description"][i] )+ "\""
 #        l= int(train3['ID'][i])
 #        #varlist = [2,k]
-#        query = "INSERT INTO cleanIdeas (ID,cleanIdea) VALUES ("+str(l)+","+k+")"
+#        query = "INSERT INTO cleandocs (ID,clean) VALUES ("+str(l)+","+k+")"
 #        print(query)
-#        #query = "INSERT INTO cleanIdeas SET ID= int(train3['ID'][i]), cleanIdea=clean_ideas[i]"
+#        #query = "INSERT INTO cleandocs SET ID= int(train3['ID'][i]), cleandoc=clean_docs[i]"
 #        cursor.execute(query)
 #        connection.commit() 
     
     
-    num_ideas = train3["DESCRIPTION"].size
+    num_docs = train3["DESCRIPTION"].size
     
-    train4 = pd.read_sql('SELECT cleanIdea from cleanIdeas', \
+    train4 = pd.read_sql('SELECT cleandoc from cleandocs', \
     connection, index_col=None, coerce_float=True, params=None, parse_dates=None, columns=None, chunksize=None)
     
     clean=[]
-    for i in xrange( 0, 6064 ):
+    for i in xrange( 0, num_docs ):
         if( (i+1)%100 == 0 ):
-            print " Retrieving Idea %d of %d\n" % ( i+1, num_ideas )     
-        clean.append(train4['cleanIdea'][i].split())
+            print " Retrieving doc %d of %d\n" % ( i+1, num_docs )     
+        clean.append(train4['cleandoc'][i].split())
         
     connection.close() 
     
@@ -128,10 +128,10 @@ else:
     #Set display option to 3000
     pd.options.display.max_colwidth = 3000
     
-    idea = raw_input("Kindly avoid the use of abbreviations, special characters and numbers. Please enter an idea: ")
+    doc = raw_input("Kindly avoid the use of abbreviations, special characters and numbers. Please enter a doc: ")
     #os.system("pause")
 
-    qtext =  idea_to_words(idea) 
+    qtext =  doc_to_words(doc) 
     query = lsi_model[tfidf_model[d.doc2bow(qtext)]] 
     
     a2 = sim[query] 
